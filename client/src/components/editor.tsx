@@ -5,18 +5,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { CategorySelect } from "@/components/category-select";
 
 interface EditorProps {
   onSave: () => void;
   initialTitle?: string;
   initialContent?: string;
+  initialCategoryId?: number | null;
   isEdit?: boolean;
   entryId?: number;
 }
 
-export function Editor({ onSave, initialTitle = "", initialContent = "", isEdit = false, entryId }: EditorProps) {
+export function Editor({ 
+  onSave, 
+  initialTitle = "", 
+  initialContent = "", 
+  initialCategoryId = null,
+  isEdit = false, 
+  entryId 
+}: EditorProps) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [categoryId, setCategoryId] = useState<number | null>(initialCategoryId);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -33,9 +43,17 @@ export function Editor({ onSave, initialTitle = "", initialContent = "", isEdit 
     setIsSaving(true);
     try {
       if (isEdit && entryId) {
-        await apiRequest("PATCH", `/api/entries/${entryId}`, { title, content });
+        await apiRequest("PATCH", `/api/entries/${entryId}`, { 
+          title, 
+          content,
+          categoryId 
+        });
       } else {
-        await apiRequest("POST", "/api/entries", { title, content });
+        await apiRequest("POST", "/api/entries", { 
+          title, 
+          content,
+          categoryId 
+        });
       }
       toast({
         title: "Succès",
@@ -61,6 +79,9 @@ export function Editor({ onSave, initialTitle = "", initialContent = "", isEdit 
         onChange={(e) => setTitle(e.target.value)}
         className="mb-4 text-xl font-semibold"
       />
+      <div className="mb-4">
+        <CategorySelect value={categoryId} onChange={setCategoryId} />
+      </div>
       <Textarea
         placeholder="Contenu de votre entrée..."
         value={content}

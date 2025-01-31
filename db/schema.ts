@@ -18,8 +18,17 @@ export const media = pgTable("media", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  entryId: integer("entry_id").references(() => entries.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").notNull(),
+  authorName: text("author_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const entryRelations = relations(entries, ({ many }) => ({
   media: many(media),
+  comments: many(comments),
 }));
 
 export const mediaRelations = relations(media, ({ one }) => ({
@@ -29,12 +38,23 @@ export const mediaRelations = relations(media, ({ one }) => ({
   }),
 }));
 
+export const commentRelations = relations(comments, ({ one }) => ({
+  entry: one(entries, {
+    fields: [comments.entryId],
+    references: [entries.id],
+  }),
+}));
+
 export const insertEntrySchema = createInsertSchema(entries);
 export const selectEntrySchema = createSelectSchema(entries);
 export const insertMediaSchema = createInsertSchema(media);
 export const selectMediaSchema = createSelectSchema(media);
+export const insertCommentSchema = createInsertSchema(comments);
+export const selectCommentSchema = createSelectSchema(comments);
 
 export type Entry = typeof entries.$inferSelect;
 export type InsertEntry = typeof entries.$inferInsert;
 export type Media = typeof media.$inferSelect;
 export type InsertMedia = typeof media.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = typeof comments.$inferInsert;

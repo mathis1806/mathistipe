@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { entries } from "@db/schema";
+import { entries, comments } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
@@ -58,6 +58,47 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: "Entrée supprimée avec succès" });
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la suppression de l'entrée" });
+    }
+  });
+
+  // Get comments for an entry
+  app.get("/api/entries/:entryId/comments", async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      const entryComments = await db.query.comments.findMany({
+        where: eq(comments.entryId, parseInt(entryId)),
+        orderBy: (comments, { desc }) => [desc(comments.createdAt)],
+      });
+      res.json(entryComments);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des commentaires" });
+    }
+  });
+
+  // Add a comment to an entry
+  app.post("/api/entries/:entryId/comments", async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      const { content, authorName } = req.body;
+      const [comment] = await db.insert(comments).values({
+        entryId: parseInt(entryId),
+        content,
+        authorName,
+      }).returning();
+      res.json(comment);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de l'ajout du commentaire" });
+    }
+  });
+
+  // Delete a comment
+  app.delete("/api/comments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(comments).where(eq(comments.id, parseInt(id)));
+      res.json({ message: "Commentaire supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la suppression du commentaire" });
     }
   });
 

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { Editor } from "@/components/editor";
+import { CommentSection } from "@/components/comment-section";
 import type { Entry } from "@db/schema";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default function EntryPage() {
 
   const handleDelete = async () => {
     if (!entryId) return;
-    
+
     try {
       await apiRequest("DELETE", `/api/entries/${entryId}`);
       toast({
@@ -177,6 +178,8 @@ export default function EntryPage() {
           </CardContent>
         </Card>
       )}
+
+      {!isEditing && <CommentSection entryId={entry.id} />}
     </div>
   );
 }

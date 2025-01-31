@@ -17,6 +17,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get single entry
+  app.get("/api/entries/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const entry = await db.query.entries.findFirst({
+        where: eq(entries.id, parseInt(id)),
+      });
+
+      if (!entry) {
+        return res.status(404).json({ message: "Entrée non trouvée" });
+      }
+
+      res.json(entry);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération de l'entrée" });
+    }
+  });
+
   // Create new entry
   app.post("/api/entries", async (req, res) => {
     try {

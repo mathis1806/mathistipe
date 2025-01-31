@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 
 interface EntryCardProps {
@@ -17,6 +17,10 @@ interface EntryCardProps {
 export function EntryCard({ entry, onEdit }: EntryCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: comments = [] } = useQuery({
+    queryKey: [`/api/entries/${entry.id}/comments`],
+  });
 
   const handleDelete = async () => {
     try {
@@ -41,8 +45,13 @@ export function EntryCard({ entry, onEdit }: EntryCardProps) {
         <CardTitle>{entry.title}</CardTitle>
         <div className="flex gap-2">
           <Link href={`/entry/${entry.id}`}>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="relative">
               <MessageSquare className="h-4 w-4" />
+              {comments.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {comments.length}
+                </span>
+              )}
             </Button>
           </Link>
           <Button variant="outline" size="icon" onClick={() => onEdit(entry)}>

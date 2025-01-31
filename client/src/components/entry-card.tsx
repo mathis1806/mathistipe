@@ -3,11 +3,12 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Entry } from "@db/schema";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, MessageSquare, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface EntryCardProps {
   entry: Entry;
@@ -42,7 +43,15 @@ export function EntryCard({ entry, onEdit }: EntryCardProps) {
   return (
     <Card className="mb-4">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{entry.title}</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>{entry.title}</CardTitle>
+          {entry.category && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Tag className="h-3 w-3" />
+              {entry.category.name}
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
           <Link href={`/entry/${entry.id}`}>
             <Button variant="outline" size="icon" className="relative">

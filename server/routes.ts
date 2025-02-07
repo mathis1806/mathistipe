@@ -1,8 +1,23 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { entries, comments, categories } from "@db/schema";
+import { entries, comments, categories, media } from "@db/schema";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+
+const storage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = uuidv4();
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 export function registerRoutes(app: Express): Server {
   // Get all categories
@@ -151,6 +166,57 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: "Commentaire supprimé avec succès" });
     } catch (error) {
       res.status(500).json({ message: "Erreur lors de la suppression du commentaire" });
+    }
+  });
+
+  // Get media for an entry
+  app.get("/api/entries/:entryId/media", async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      const entryMedia = await db.query.media.findMany({
+        where: eq(media.entryId, parseInt(entryId)),
+        orderBy: (media, { desc }) => [desc(media.createdAt)],
+      });
+      res.json(entryMedia);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération des médias" });
+    }
+  });
+
+  // Upload media for an entry
+  app.post("/api/entries/:entryId/media", upload.single('file'), async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "Aucun fichier n'a été téléchargé" });
+      }
+
+      const fileType = file.mimetype.startsWith('image/') ? 'image' :
+                      file.mimetype.startsWith('video/') ? 'video' :
+                      file.mimetype === 'application/pdf' ? 'pdf' : 'other';
+
+      const [mediaItem] = await db.insert(media).values({
+        entryId: parseInt(entryId),
+        type: fileType,
+        url: `/uploads/${file.filename}`,
+      }).returning();
+
+      res.json(mediaItem);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors du téléchargement du média" });
+    }
+  });
+
+  // Delete media
+  app.delete("/api/media/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(media).where(eq(media.id, parseInt(id)));
+      res.json({ message: "Média supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la suppression du média" });
     }
   });
 

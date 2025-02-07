@@ -31,7 +31,7 @@ export function CategorySelect({ value, onChange }: CategorySelectProps) {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const { toast } = useToast();
-  
+
   const { data: categories = [], refetch } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
@@ -71,14 +71,14 @@ export function CategorySelect({ value, onChange }: CategorySelectProps) {
   return (
     <div className="flex gap-2 items-center">
       <Select
-        value={value?.toString() || ""}
-        onValueChange={(value) => onChange(value ? parseInt(value) : null)}
+        value={value?.toString() || "none"}
+        onValueChange={(value) => onChange(value === "none" ? null : parseInt(value))}
       >
         <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="Sélectionner une catégorie" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Aucune catégorie</SelectItem>
+          <SelectItem value="none">Aucune catégorie</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.id.toString()}>
               {category.name}

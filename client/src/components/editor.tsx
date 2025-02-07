@@ -8,7 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { CategorySelect } from "@/components/category-select";
 import { MediaUpload } from "@/components/media-upload";
 import { MediaViewer } from "@/components/media-viewer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Media } from "@db/schema";
 
 interface EditorProps {
@@ -32,11 +32,13 @@ export function Editor({
   const [content, setContent] = useState(initialContent);
   const [categoryId, setCategoryId] = useState<number | null>(initialCategoryId);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedEntryId, setSavedEntryId] = useState<number | undefined>(entryId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: media = [], refetch: refetchMedia } = useQuery<Media[]>({
-    queryKey: [`/api/entries/${entryId}/media`],
-    enabled: !!entryId,
+    queryKey: [`/api/entries/${savedEntryId}/media`],
+    enabled: !!savedEntryId,
   });
 
   const handleSave = async () => {
@@ -58,11 +60,13 @@ export function Editor({
           categoryId 
         });
       } else {
-        await apiRequest("POST", "/api/entries", { 
+        const response = await apiRequest("POST", "/api/entries", { 
           title, 
           content,
           categoryId 
         });
+        const newEntry = await response.json();
+        setSavedEntryId(newEntry.id);
       }
       toast({
         title: "Succès",
@@ -97,13 +101,13 @@ export function Editor({
         onChange={(e) => setContent(e.target.value)}
         className="min-h-[200px] mb-4"
       />
-      {isEdit && entryId && (
+      {savedEntryId && (
         <div className="space-y-4 mb-4">
           <h3 className="text-lg font-semibold">Fichiers joints</h3>
-          <MediaUpload entryId={entryId} onUploadComplete={refetchMedia} />
+          <MediaUpload entryId={savedEntryId} onUploadComplete={refetchMedia} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {media.map((item) => (
-              <MediaViewer key={item.id} media={item} entryId={entryId} />
+              <MediaViewer key={item.id} media={item} entryId={savedEntryId} />
             ))}
           </div>
         </div>

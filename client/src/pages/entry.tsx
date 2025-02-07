@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { Editor } from "@/components/editor";
 import { CommentSection } from "@/components/comment-section";
-import type { Entry } from "@db/schema";
+import type { Entry, Media } from "@db/schema";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -24,6 +24,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MediaViewer } from "@/components/media-viewer";
 
 export default function EntryPage() {
   const [, params] = useRoute("/entry/:id");
@@ -34,6 +35,11 @@ export default function EntryPage() {
 
   const { data: entry, isLoading } = useQuery<Entry>({
     queryKey: [`/api/entries/${entryId}`],
+    enabled: !!entryId,
+  });
+
+  const { data: media = [] } = useQuery<Media[]>({
+    queryKey: [`/api/entries/${entryId}/media`],
     enabled: !!entryId,
   });
 
@@ -163,23 +169,31 @@ export default function EntryPage() {
           entryId={entry.id}
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{entry.title}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(entry.date), "PPP 'à' HH:mm", { locale: fr })}
-              {entry.updatedAt > entry.date && " (modifié)"}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-slate max-w-none">
-              <p className="whitespace-pre-wrap">{entry.content}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>{entry.title}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(entry.date), "PPP 'à' HH:mm", { locale: fr })}
+                {entry.updatedAt > entry.date && " (modifié)"}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-slate max-w-none">
+                <p className="whitespace-pre-wrap">{entry.content}</p>
+              </div>
+              {media.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {media.map((item) => (
+                    <MediaViewer key={item.id} media={item} entryId={entry.id} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <CommentSection entryId={entry.id} />
+        </>
       )}
-
-      {!isEditing && <CommentSection entryId={entry.id} />}
     </div>
   );
 }
